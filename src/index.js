@@ -20,6 +20,18 @@ async function jsForceLogin(username, password, token) {
     })
 }
 
+async function jsForceLogout() {
+    return new Promise((resolve, reject) => {
+        conn.logout(function (error) {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+}
+
 async function main() {
     try {
         const USERNAME = process.env.JSFORCE_USERNAME
@@ -27,9 +39,20 @@ async function main() {
         const TOKEN = process.env.JSFORCE_SECURITY_TOKEN
 
         const userInfo = await jsForceLogin(USERNAME, PASSWORD, TOKEN)
-        console.log("user id: " + userInfo.id)
-        console.log("user info: " + userInfo.url)
-        console.log("user org: " + userInfo.organizationId)
+
+        // make query
+        const query = "SELECT Id, Name FROM Account LIMIT 5"
+        conn.query(query, function (error, result) {
+            if (error) {
+                console.log(error)
+            }
+
+            console.log("🚀 ~ result:", result)
+        })
+
+        // console.log("user id: " + userInfo.id)
+        // console.log("user info: " + userInfo.url)
+        // console.log("user org: " + userInfo.organizationId)
     } catch (error) {
         console.error("Login failed:", error)
     }
