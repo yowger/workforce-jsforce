@@ -9,22 +9,30 @@ const conn = new jsforce.Connection({
 })
 
 async function jsForceLogin(username, password, token) {
-    try {
-        const userInfo = await conn.login(username, password + token)
-        return userInfo
-    } catch (error) {
-        console.error("JsForce Login failed: " + error)
-        throw error
-    }
+    return new Promise((resolve, reject) => {
+        conn.login(username, password + token, function (error, userInfo) {
+            if (error) {
+                reject(error)
+            } else {
+                resolve(userInfo)
+            }
+        })
+    })
 }
 
 async function main() {
-    const USERNAME = process.env.JSFORCE_USERNAME
-    const PASSWORD = process.env.JSFORCE_PASSWORD
-    const TOKEN = process.env.JSFORCE_SECURITY_TOKEN
+    try {
+        const USERNAME = process.env.JSFORCE_USERNAME
+        const PASSWORD = process.env.JSFORCE_PASSWORD
+        const TOKEN = process.env.JSFORCE_SECURITY_TOKEN
 
-    const userInfo = await jsForceLogin(USERNAME, PASSWORD, TOKEN)
-    console.log("user data: " + userInfo)
+        const userInfo = await jsForceLogin(USERNAME, PASSWORD, TOKEN)
+        console.log("user id: " + userInfo.id)
+        console.log("user info: " + userInfo.url)
+        console.log("user org: " + userInfo.organizationId)
+    } catch (error) {
+        console.error("Login failed:", error)
+    }
 }
 
 main()
