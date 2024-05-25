@@ -1,0 +1,9 @@
+account
+contact
+opportunity
+lead
+case
+task
+event
+user
+custom objects

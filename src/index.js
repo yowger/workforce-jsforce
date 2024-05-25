@@ -32,6 +32,7 @@ async function jsForceLogout() {
     })
 }
 
+// important tables to query
 async function main() {
     try {
         const USERNAME = process.env.JSFORCE_USERNAME
