@@ -1,62 +1,38 @@
 var jsforce = require("jsforce")
+var express = require("express")
 var dotenv = require("dotenv")
 
 dotenv.config({ path: ".env" })
 
-const LOGIN_URL = process.env.JSFORCE_LOGIN_URL
-const conn = new jsforce.Connection({
-    loginUrl: LOGIN_URL,
+const app = express()
+
+const oauth2 = new jsforce.OAuth2({
+    loginUrl: "https://login.salesforce.com",
+    clientId: process.env.JSFORCE_KEY,
+    clientSecret: process.env.JSFORCE_SECRET,
+    redirectUri: "http://localhost:5173/oauth/callback",
 })
 
-async function jsForceLogin(username, password, token) {
-    return new Promise((resolve, reject) => {
-        conn.login(username, password + token, function (error, userInfo) {
-            if (error) {
-                reject(error)
-            } else {
-                resolve(userInfo)
-            }
-        })
-    })
-}
+app.get("/oauth/auth", function (req, res) {
+    res.redirect(oauth2.getAuthorizationUrl({ scope: "full" }))
+})
 
-async function jsForceLogout() {
-    return new Promise((resolve, reject) => {
-        conn.logout(function (error) {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
-}
+app.get("/oauth/callback", async function (req, res) {
+    const conn = new jsforce.Connection({ oauth2: oauth2 })
+    const code = req.query.code
 
-// important tables to query
-async function main() {
-    try {
-        const USERNAME = process.env.JSFORCE_USERNAME
-        const PASSWORD = process.env.JSFORCE_PASSWORD
-        const TOKEN = process.env.JSFORCE_SECURITY_TOKEN
+    const userInfo = await conn.authorize(code)
 
-        const userInfo = await jsForceLogin(USERNAME, PASSWORD, TOKEN)
+    console.log(conn.accessToken)
+    console.log(conn.refreshToken)
+    console.log(conn.instanceUrl)
+    console.log("User ID: " + userInfo.id)
+    console.log("Org ID: " + userInfo.organizationId)
 
-        // make query
-        const query = "SELECT Id, Name FROM Account LIMIT 5"
-        conn.query(query, function (error, result) {
-            if (error) {
-                console.log(error)
-            }
+    res.send("success")
+})
 
-            console.log("🚀 ~ result:", result)
-        })
-
-        // console.log("user id: " + userInfo.id)
-        // console.log("user info: " + userInfo.url)
-        // console.log("user org: " + userInfo.organizationId)
-    } catch (error) {
-        console.error("Login failed:", error)
-    }
-}
-
-main()
+const PORT = 8000
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`)
+})
