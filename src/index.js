@@ -1,10 +1,12 @@
 var jsforce = require("jsforce")
 var express = require("express")
 var dotenv = require("dotenv")
+var cors = require("cors")
 
 dotenv.config({ path: ".env" })
 
 const app = express()
+app.use(cors())
 
 const oauth2 = new jsforce.OAuth2({
     loginUrl: "https://login.salesforce.com",
@@ -23,13 +25,12 @@ app.get("/oauth/callback", async function (req, res) {
 
     const userInfo = await conn.authorize(code)
 
-    console.log(conn.accessToken)
-    console.log(conn.refreshToken)
-    console.log(conn.instanceUrl)
-    console.log("User ID: " + userInfo.id)
-    console.log("Org ID: " + userInfo.organizationId)
-
-    res.send("success")
+    res.status(200).json({
+        accessToken: conn.accessToken,
+        instanceUrl: conn.instanceUrl,
+        userId: userInfo.id,
+        orgId: userInfo.organizationId,
+    })
 })
 
 const PORT = 8000
